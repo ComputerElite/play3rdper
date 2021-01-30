@@ -1,0 +1,23 @@
+{
+  "id": "Play3rdPer",
+  "name": "3rd Person Mod",
+  "version": "0.1.0",
+  "author": "ComputerElite",
+  "description": [
+    "Allows you to play in third Person"
+  ],
+  "category": "Gameplay",
+  "gameVersion": "1.13.2",
+  "platform": "Quest",
+  "components": [
+    {
+      "type": "HookMod",
+      "installAction": {
+        "installLibraryFile": "libPlay3rdPer.so"
+      },
+      "uninstallAction": {
+        "removeLibraryFile": "libPlay3rdPer.so"
+      }
+    }
+  ]
+}
