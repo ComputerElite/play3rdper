@@ -32,6 +32,10 @@ void SetActive(Play3rdPerViewController* self, bool newValue) {
     getConfig().config["Active"].SetBool(newValue);
 }
 
+void SetFixed(Play3rdPerViewController* self, bool newValue) {
+    getConfig().config["Fixed"].SetBool(newValue);
+}
+
 void SetXFloat(Play3rdPerViewController* self, float newValue)   {
     getConfig().config["XOffset"].SetFloat(newValue);
 }
@@ -58,10 +62,16 @@ void Play3rdPerViewController::DidActivate(bool firstActivation, bool addedToHie
         get_gameObject()->AddComponent<Touchable*>();
         GameObject* container = BeatSaberUI::CreateScrollableSettingsContainer(get_transform());
 
-        // Toggle
+        // Active
         auto ActivePress = il2cpp_utils::MakeDelegate<UnityEngine::Events::UnityAction_1<bool>*>(
                    classof(UnityEngine::Events::UnityAction_1<bool>*), this, SetActive);
         QuestUI::BeatSaberUI::CreateToggle(container->get_transform(), "Active", getConfig().config["Active"].GetBool(), ActivePress);
+
+        // Fixed
+        auto FixedPress = il2cpp_utils::MakeDelegate<UnityEngine::Events::UnityAction_1<bool>*>(
+                   classof(UnityEngine::Events::UnityAction_1<bool>*), this, SetFixed);
+        UnityEngine::UI::Toggle* FixedObject = QuestUI::BeatSaberUI::CreateToggle(container->get_transform(), "Fixed camera position", getConfig().config["Fixed"].GetBool(), FixedPress);
+        QuestUI::BeatSaberUI::AddHoverHint(FixedObject->get_gameObject(), "Can make you dizzy and motion sick");
 
         // X
         auto XChange = il2cpp_utils::MakeDelegate<UnityEngine::Events::UnityAction_1<float>*>(

@@ -20,6 +20,7 @@
 #include "UnityEngine/Resources.hpp"
 #include "UnityEngine/Camera.hpp"
 #include "UnityEngine/GameObject.hpp"
+#include "UnityEngine/Matrix4x4.hpp"
 
 #include "Play3rdPerViewController.hpp"
 
@@ -42,6 +43,28 @@ Logger& getLogger() {
     return *logger;
 }
 
+UnityEngine::Matrix4x4 TranslateMatrix(UnityEngine::Vector3 vector)
+        {
+            UnityEngine::Matrix4x4 result;
+            result.m00 = 1;
+            result.m01 = 0;
+            result.m02 = 0;
+            result.m03 = vector.x;
+            result.m10 = 0;
+            result.m11 = 1;
+            result.m12 = 0;
+            result.m13 = vector.y;
+            result.m20 = 0;
+            result.m21 = 0;
+            result.m22 = 1;
+            result.m23 = vector.z;
+            result.m30 = 0;
+            result.m31 = 0;
+            result.m32 = 0;
+            result.m33 = 1;
+            return result;
+        }
+
 MAKE_HOOK_OFFSETLESS(LightManager_OnWillRenderObject, void, LightManager* self, UnityEngine::Camera* camera) {
   // Do stuff when this function is called 
   LightManager_OnWillRenderObject(self, camera); 
@@ -51,13 +74,29 @@ MAKE_HOOK_OFFSETLESS(LightManager_OnWillRenderObject, void, LightManager* self, 
   UnityEngine::Vector3 rot = c->get_transform()->get_eulerAngles();
   UnityEngine::Vector3 pos = c->get_transform()->get_position();
 
-  pos.x += getConfig().config["XOffset"].GetFloat();
-  pos.y += getConfig().config["YOffset"].GetFloat();
-  pos.z += getConfig().config["ZOffset"].GetFloat();
+  typedef function_ptr_t<void, UnityEngine::Camera*, UnityEngine::Matrix4x4> type;
+auto method = *reinterpret_cast<type>(il2cpp_functions::resolve_icall("UnityEngine.Camera::set_cullingMatrix_Injected"));
 
-  rot.x += getConfig().config["XRot"].GetFloat();
-  rot.y += getConfig().config["YRot"].GetFloat();
-  rot.z += getConfig().config["ZRot"].GetFloat();
+method(c, UnityEngine::Matrix4x4::Ortho(-99999, 99999, -99999, 99999, 0.001f, 99999) * TranslateMatrix(UnityEngine::Vector3::get_forward() * -99999 / 2) * c->get_worldToCameraMatrix());
+
+  if(getConfig().config["Fixed"].GetBool()) {
+    pos.x = getConfig().config["XOffset"].GetFloat();
+    pos.y = getConfig().config["YOffset"].GetFloat();
+    pos.z = getConfig().config["ZOffset"].GetFloat();
+
+    rot.x = getConfig().config["XRot"].GetFloat();
+    rot.y = getConfig().config["YRot"].GetFloat();
+    rot.z = getConfig().config["ZRot"].GetFloat();
+  } else {
+    pos.x += getConfig().config["XOffset"].GetFloat();
+    pos.y += getConfig().config["YOffset"].GetFloat();
+    pos.z += getConfig().config["ZOffset"].GetFloat();
+
+    rot.x += getConfig().config["XRot"].GetFloat();
+    rot.y += getConfig().config["YRot"].GetFloat();
+    rot.z += getConfig().config["ZRot"].GetFloat();
+  } 
+  
   
 
   c->get_transform()->set_position(pos);
@@ -81,6 +120,10 @@ void createDefaultConfig()  {
         getConfig().config.AddMember("ZRot", rapidjson::Value().SetFloat(0), allocator);
     }
 
+    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("Fixed"))) {
+        getConfig().config.AddMember("Fixed", rapidjson::Value().SetBool(false), allocator);
+    }
+
     if(getConfig().config.HasMember("Active")) {return;}
 
     // Add all the default options
@@ -93,6 +136,7 @@ void createDefaultConfig()  {
     // Add a member to the config, using the allocator
 
     getConfig().config.AddMember("Active", rapidjson::Value().SetBool(true), allocator);
+    getConfig().config.AddMember("Fixed", rapidjson::Value().SetBool(false), allocator);
     getConfig().config.AddMember("XOffset", rapidjson::Value().SetFloat(2.0), allocator);
     getConfig().config.AddMember("YOffset", rapidjson::Value().SetFloat(1.0), allocator);
     getConfig().config.AddMember("ZOffset", rapidjson::Value().SetFloat(-2.0), allocator);
