@@ -1,26 +1,19 @@
 #include "main.hpp"
 #include "GlobalNamespace/LightManager.hpp"
-#include "GlobalNamespace/MainCamera.hpp"
-#include "GlobalNamespace/NoteController.hpp"
-#include "GlobalNamespace/ScoreController.hpp"
-#include "GlobalNamespace/PlayerTransforms.hpp"
-#include "GlobalNamespace/GameplayModifiers.hpp"
-#include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
-#include "GlobalNamespace/IDifficultyBeatmap.hpp"
-#include "GlobalNamespace/OverrideEnvironmentSettings.hpp"
-#include "GlobalNamespace/ColorScheme.hpp"
-#include "GlobalNamespace/PlayerSpecificSettings.hpp"
-#include "GlobalNamespace/PracticeSettings.hpp"
-#include "GlobalNamespace/FireworksController.hpp"
-#include "GlobalNamespace/NoteCutCoreEffectsSpawner.hpp"
-#include "GlobalNamespace/ShockwaveEffect.hpp"
-#include "GlobalNamespace/SaberTrail.hpp"
+#include "GlobalNamespace/VRControllersInputManager.hpp"
+#include "GlobalNamespace/VRController.hpp"
+#include "GlobalNamespace/Saber.hpp"
+#include "GlobalNamespace/SaberManager.hpp"
+#include "GlobalNamespace/OVRInput.hpp"
+#include "GlobalNamespace/OVRInput_Button.hpp"
 
 #include "UnityEngine/Transform.hpp"
 #include "UnityEngine/Resources.hpp"
 #include "UnityEngine/Camera.hpp"
 #include "UnityEngine/GameObject.hpp"
+#include "UnityEngine/Quaternion.hpp"
 #include "UnityEngine/Matrix4x4.hpp"
+#include "UnityEngine/SceneManagement/Scene.hpp"
 
 #include "Play3rdPerViewController.hpp"
 
@@ -28,8 +21,6 @@
 #include "custom-types/shared/register.hpp"
 
 using namespace GlobalNamespace;
-
-GameplayModifiers* gpm = nullptr;
 
 static ModInfo modInfo;
 Configuration& getConfig() {
@@ -65,6 +56,16 @@ UnityEngine::Matrix4x4 TranslateMatrix(UnityEngine::Vector3 vector)
             return result;
         }
 
+VRController* rightController = nullptr;
+VRController* leftController = nullptr;
+UnityEngine::Vector3 saberRot = UnityEngine::Vector3(getConfig().config["XRot"].GetFloat(), getConfig().config["YRot"].GetFloat(), getConfig().config["ZRot"].GetFloat());
+UnityEngine::Vector3 saberPos = UnityEngine::Vector3(getConfig().config["XOffset"].GetFloat(), getConfig().config["YOffset"].GetFloat(), getConfig().config["ZOffset"].GetFloat());
+
+UnityEngine::Vector3 prevPos = UnityEngine::Vector3(0.0f, 0.0f, 0.0f);
+UnityEngine::Vector3 prevRot = UnityEngine::Vector3(0.0f, 0.0f, 0.0f);
+// UnityEngine::Vector3 prevPosOffset = UnityEngine::Vector3(0.0f, 0.0f, 0.0f);
+// UnityEngine::Vector3 prevRotOffset = UnityEngine::Vector3(0.0f, 0.0f, 0.0f);
+
 MAKE_HOOK_OFFSETLESS(LightManager_OnWillRenderObject, void, LightManager* self, UnityEngine::Camera* camera) {
   // Do stuff when this function is called 
   LightManager_OnWillRenderObject(self, camera); 
@@ -74,35 +75,99 @@ MAKE_HOOK_OFFSETLESS(LightManager_OnWillRenderObject, void, LightManager* self, 
   UnityEngine::Vector3 rot = c->get_transform()->get_eulerAngles();
   UnityEngine::Vector3 pos = c->get_transform()->get_position();
 
+  if(getConfig().config["SwapSaber"].GetBool() && rightController != nullptr) {
+        saberPos = rightController->get_position();
+        saberRot = rightController->get_rotation().get_eulerAngles();
+    } else if(leftController != nullptr) {
+        saberPos = leftController->get_position();
+        saberRot = leftController->get_rotation().get_eulerAngles();
+    }
+
+      
+    if(getConfig().config["MoveWhilePlaying"].GetBool()) {
+        GlobalNamespace::OVRInput::Update();
+        if(GlobalNamespace::OVRInput::Get(GlobalNamespace::OVRInput::Button::Four, OVRInput::Controller::Touch)) {
+            
+            UnityEngine::Vector3 posDifference = pos - prevPos;
+            getConfig().config["XOffset"].SetFloat(posDifference.x * getConfig().config["MoveMultiplier"].GetFloat() + getConfig().config["XOffset"].GetFloat());
+            getConfig().config["YOffset"].SetFloat(posDifference.y * getConfig().config["MoveMultiplier"].GetFloat() + getConfig().config["YOffset"].GetFloat());
+            getConfig().config["ZOffset"].SetFloat(posDifference.z * getConfig().config["MoveMultiplier"].GetFloat() + getConfig().config["ZOffset"].GetFloat());
+        }
+        prevPos = pos;
+        prevRot = rot;
+    }
+    UnityEngine::Vector3 offsetRot = UnityEngine::Vector3(getConfig().config["XRot"].GetFloat(), getConfig().config["YRot"].GetFloat(), getConfig().config["ZRot"].GetFloat());
+    UnityEngine::Vector3 offsetPos = UnityEngine::Vector3(getConfig().config["XOffset"].GetFloat(), getConfig().config["YOffset"].GetFloat(), getConfig().config["ZOffset"].GetFloat());
+    
+
   typedef function_ptr_t<void, UnityEngine::Camera*, UnityEngine::Matrix4x4> type;
 auto method = *reinterpret_cast<type>(il2cpp_functions::resolve_icall("UnityEngine.Camera::set_cullingMatrix_Injected"));
 
 method(c, UnityEngine::Matrix4x4::Ortho(-99999, 99999, -99999, 99999, 0.001f, 99999) * TranslateMatrix(UnityEngine::Vector3::get_forward() * -99999 / 2) * c->get_worldToCameraMatrix());
 
   if(getConfig().config["Fixed"].GetBool()) {
-    pos.x = getConfig().config["XOffset"].GetFloat();
-    pos.y = getConfig().config["YOffset"].GetFloat();
-    pos.z = getConfig().config["ZOffset"].GetFloat();
+    if(getConfig().config["LeftSaber"].GetBool()) { 
+        pos.x = saberPos.x + (getConfig().config["ApplyOffsets"].GetBool() ? offsetPos.x : 0.0f);
+        pos.y = saberPos.y + (getConfig().config["ApplyOffsets"].GetBool() ? offsetPos.y : 0.0f);
+        pos.z = saberPos.z + (getConfig().config["ApplyOffsets"].GetBool() ? offsetPos.z : 0.0f);
 
-    rot.x = getConfig().config["XRot"].GetFloat();
-    rot.y = getConfig().config["YRot"].GetFloat();
-    rot.z = getConfig().config["ZRot"].GetFloat();
+        if(!getConfig().config["OnlyPos"].GetBool()) {
+            rot.x = saberRot.x + (getConfig().config["ApplyOffsets"].GetBool() ? offsetRot.x : 0.0f);
+            rot.y = saberRot.y + (getConfig().config["ApplyOffsets"].GetBool() ? offsetRot.y : 0.0f);
+            rot.z = saberRot.z + (getConfig().config["ApplyOffsets"].GetBool() ? offsetRot.z : 0.0f);
+        }
+    } else {
+        pos.x = offsetPos.x;
+        pos.y = offsetPos.y;
+        pos.z = offsetPos.z;
+
+        if(!getConfig().config["OnlyPos"].GetBool()) {
+            rot.x = offsetRot.z;
+            rot.y = offsetRot.y;
+            rot.z = offsetRot.z;
+        }
+    }
   } else {
-    pos.x += getConfig().config["XOffset"].GetFloat();
-    pos.y += getConfig().config["YOffset"].GetFloat();
-    pos.z += getConfig().config["ZOffset"].GetFloat();
+      if(getConfig().config["LeftSaber"].GetBool()) {
+        pos.x += saberPos.x + (getConfig().config["ApplyOffsets"].GetBool() ? offsetPos.x : 0.0f);
+        pos.y += saberPos.y + (getConfig().config["ApplyOffsets"].GetBool() ? offsetPos.y : 0.0f);
+        pos.z += saberPos.z + (getConfig().config["ApplyOffsets"].GetBool() ? offsetPos.z : 0.0f);
 
-    rot.x += getConfig().config["XRot"].GetFloat();
-    rot.y += getConfig().config["YRot"].GetFloat();
-    rot.z += getConfig().config["ZRot"].GetFloat();
+        if(!getConfig().config["OnlyPos"].GetBool()) {
+            rot.x += saberRot.x + (getConfig().config["ApplyOffsets"].GetBool() ? offsetRot.x : 0.0f);
+            rot.y += saberRot.y + (getConfig().config["ApplyOffsets"].GetBool() ? offsetRot.y : 0.0f);
+            rot.z += saberRot.z + (getConfig().config["ApplyOffsets"].GetBool() ? offsetRot.z : 0.0f);
+        }
+      } else {
+        pos.x += offsetPos.x;
+        pos.y += offsetPos.y;
+        pos.z += offsetPos.z;
+
+        if(!getConfig().config["OnlyPos"].GetBool()) {
+            rot.x += offsetRot.z;
+            rot.y += offsetRot.y;
+            rot.z += offsetRot.z;
+        }
+      }
+    
   } 
-  
-  
 
   c->get_transform()->set_position(pos);
   c->get_transform()->set_eulerAngles(rot);
-  
 }
+
+MAKE_HOOK_OFFSETLESS(VRController_Update, void, VRController* self) {
+    VRController_Update(self);
+    if(self->get_node() == UnityEngine::XR::XRNode::LeftHand) {
+        leftController = self;
+    } else if(self->get_node() == UnityEngine::XR::XRNode::RightHand){
+        rightController = self;
+    }else {
+        rightController = nullptr;
+        leftController = nullptr;
+    }
+}
+
 
 void createDefaultConfig()  {
 
@@ -124,6 +189,30 @@ void createDefaultConfig()  {
         getConfig().config.AddMember("Fixed", rapidjson::Value().SetBool(false), allocator);
     }
 
+    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("LeftSaber"))) {
+        getConfig().config.AddMember("LeftSaber", rapidjson::Value().SetBool(false), allocator);
+    }
+
+    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("SwapSaber"))) {
+        getConfig().config.AddMember("SwapSaber", rapidjson::Value().SetBool(false), allocator);
+    }
+
+    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("ApplyOffsets"))) {
+        getConfig().config.AddMember("ApplyOffsets", rapidjson::Value().SetBool(false), allocator);
+    }
+
+    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("OnlyPos"))) {
+        getConfig().config.AddMember("OnlyPos", rapidjson::Value().SetBool(false), allocator);
+    }
+
+    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("MoveWhilePlaying"))) {
+        getConfig().config.AddMember("MoveWhilePlaying", rapidjson::Value().SetBool(true), allocator);
+    }
+
+    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("MoveMultiplier"))) {
+        getConfig().config.AddMember("MoveMultiplier", rapidjson::Value().SetFloat(1.0f), allocator);
+    }
+
     if(getConfig().config.HasMember("Active")) {return;}
 
     // Add all the default options
@@ -137,12 +226,18 @@ void createDefaultConfig()  {
 
     getConfig().config.AddMember("Active", rapidjson::Value().SetBool(true), allocator);
     getConfig().config.AddMember("Fixed", rapidjson::Value().SetBool(false), allocator);
+    getConfig().config.AddMember("LeftSaber", rapidjson::Value().SetBool(false), allocator);
+    getConfig().config.AddMember("SwapSaber", rapidjson::Value().SetBool(false), allocator);
+    getConfig().config.AddMember("ApplyOffsets", rapidjson::Value().SetBool(false), allocator);
+    getConfig().config.AddMember("OnlyPos", rapidjson::Value().SetBool(false), allocator);
+    getConfig().config.AddMember("MoveWhilePlaying", rapidjson::Value().SetBool(true), allocator);
     getConfig().config.AddMember("XOffset", rapidjson::Value().SetFloat(2.0), allocator);
     getConfig().config.AddMember("YOffset", rapidjson::Value().SetFloat(1.0), allocator);
     getConfig().config.AddMember("ZOffset", rapidjson::Value().SetFloat(-2.0), allocator);
     getConfig().config.AddMember("XRot", rapidjson::Value().SetFloat(0), allocator);
     getConfig().config.AddMember("YRot", rapidjson::Value().SetFloat(0), allocator);
     getConfig().config.AddMember("ZRot", rapidjson::Value().SetFloat(0), allocator);
+    getConfig().config.AddMember("MoveMultiplier", rapidjson::Value().SetFloat(1.0f), allocator);
 
     getConfig().Write(); // Write the config back to disk
 }
@@ -161,11 +256,12 @@ extern "C" void load() {
     getLogger().info("Installing hooks...");
     il2cpp_functions::Init();
     QuestUI::Init();
-custom_types::Register::RegisterType<Play3rdPer::Play3rdPerViewController>();
-QuestUI::Register::RegisterModSettingsViewController<Play3rdPer::Play3rdPerViewController*>(modInfo);
+    custom_types::Register::RegisterType<Play3rdPer::Play3rdPerViewController>();
+    QuestUI::Register::RegisterModSettingsViewController<Play3rdPer::Play3rdPerViewController*>(modInfo);
     // Install our hooks
     LoggerContextObject logger = getLogger().WithContext("load");
     INSTALL_HOOK_OFFSETLESS(logger, LightManager_OnWillRenderObject, il2cpp_utils::FindMethodUnsafe("", "LightManager", "OnWillRenderObject", 0));
+    INSTALL_HOOK_OFFSETLESS(logger, VRController_Update, il2cpp_utils::FindMethodUnsafe("", "VRController", "Update", 0));
 
     getLogger().info("Installed all hooks!");
 }
