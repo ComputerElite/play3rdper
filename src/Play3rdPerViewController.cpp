@@ -56,6 +56,10 @@ void SetMoveWhilePlaying(Play3rdPerViewController* self, bool newValue) {
     getConfig().config["MoveWhilePlaying"].SetBool(newValue);
 }
 
+void SetDisableWhileReplay(Play3rdPerViewController* self, bool newValue) {
+    getConfig().config["DisableWhileReplay"].SetBool(newValue);
+}
+
 void SetXFloat(Play3rdPerViewController* self, float newValue)   {
     getConfig().config["XOffset"].SetFloat(newValue);
 }
@@ -132,6 +136,12 @@ void Play3rdPerViewController::DidActivate(bool firstActivation, bool addedToHie
                     classof(UnityEngine::Events::UnityAction_1<float>*), this, SetMoveMultiplierFloat);
         QuestUI::IncrementSetting* MoveMultiplierObject = QuestUI::BeatSaberUI::CreateIncrementSetting(container->get_transform(), "Change movement multipler", 1, 0.1, getConfig().config["MoveMultiplier"].GetFloat(), 0, 100, MoveMultiplierChange);
         QuestUI::BeatSaberUI::AddHoverHint(MoveMultiplierObject->get_gameObject(), "If you hold the Y button while moving your head, you can adjust the camera position while playing. This multiplier decides how fast you move the camera.");
+
+        // DisableWhileReplay
+        auto DisableWhileReplayPress = il2cpp_utils::MakeDelegate<UnityEngine::Events::UnityAction_1<bool>*>(
+                   classof(UnityEngine::Events::UnityAction_1<bool>*), this, SetDisableWhileReplay);
+        UnityEngine::UI::Toggle* DisableWhileReplayObject = QuestUI::BeatSaberUI::CreateToggle(container->get_transform(), "Disable while viewing Replays", getConfig().config["DisableWhileReplay"].GetBool(), DisableWhileReplayPress);
+        QuestUI::BeatSaberUI::AddHoverHint(DisableWhileReplayObject->get_gameObject(), "While viewing a replay, the Replay mod has it's own camera control system! Enabling this setting will result in Third person mod being disabled while you view a replay.");
 
         // X
         auto XChange = il2cpp_utils::MakeDelegate<UnityEngine::Events::UnityAction_1<float>*>(

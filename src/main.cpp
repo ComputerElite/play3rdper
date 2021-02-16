@@ -6,6 +6,8 @@
 #include "GlobalNamespace/SaberManager.hpp"
 #include "GlobalNamespace/OVRInput.hpp"
 #include "GlobalNamespace/OVRInput_Button.hpp"
+#include "GlobalNamespace/AvatarPoseController.hpp"
+#include "GlobalNamespace/AudioTimeSyncController.hpp"
 
 #include "UnityEngine/Transform.hpp"
 #include "UnityEngine/Resources.hpp"
@@ -66,28 +68,27 @@ UnityEngine::Vector3 prevRot = UnityEngine::Vector3(0.0f, 0.0f, 0.0f);
 // UnityEngine::Vector3 prevPosOffset = UnityEngine::Vector3(0.0f, 0.0f, 0.0f);
 // UnityEngine::Vector3 prevRotOffset = UnityEngine::Vector3(0.0f, 0.0f, 0.0f);
 
+bool replay = false;
+
 MAKE_HOOK_OFFSETLESS(LightManager_OnWillRenderObject, void, LightManager* self, UnityEngine::Camera* camera) {
   // Do stuff when this function is called 
   LightManager_OnWillRenderObject(self, camera); 
-  if(!(getConfig().config["Active"].GetBool())) return;
-
+  if(!(getConfig().config["Active"].GetBool()) || replay) return;
   UnityEngine::Camera* c = UnityEngine::Camera::get_main();
   UnityEngine::Vector3 rot = c->get_transform()->get_eulerAngles();
   UnityEngine::Vector3 pos = c->get_transform()->get_position();
 
-  if(getConfig().config["SwapSaber"].GetBool() && rightController != nullptr) {
+  if(getConfig().config["LeftSaber"].GetBool() && getConfig().config["SwapSaber"].GetBool() && rightController != nullptr) {
         saberPos = rightController->get_position();
         saberRot = rightController->get_rotation().get_eulerAngles();
-    } else if(leftController != nullptr) {
+    } else if(getConfig().config["LeftSaber"].GetBool() && leftController != nullptr) {
         saberPos = leftController->get_position();
         saberRot = leftController->get_rotation().get_eulerAngles();
     }
 
-      
     if(getConfig().config["MoveWhilePlaying"].GetBool()) {
         GlobalNamespace::OVRInput::Update();
         if(GlobalNamespace::OVRInput::Get(GlobalNamespace::OVRInput::Button::Four, OVRInput::Controller::Touch)) {
-            
             UnityEngine::Vector3 posDifference = pos - prevPos;
             getConfig().config["XOffset"].SetFloat(posDifference.x * getConfig().config["MoveMultiplier"].GetFloat() + getConfig().config["XOffset"].GetFloat());
             getConfig().config["YOffset"].SetFloat(posDifference.y * getConfig().config["MoveMultiplier"].GetFloat() + getConfig().config["YOffset"].GetFloat());
@@ -96,10 +97,10 @@ MAKE_HOOK_OFFSETLESS(LightManager_OnWillRenderObject, void, LightManager* self, 
         prevPos = pos;
         prevRot = rot;
     }
+
     UnityEngine::Vector3 offsetRot = UnityEngine::Vector3(getConfig().config["XRot"].GetFloat(), getConfig().config["YRot"].GetFloat(), getConfig().config["ZRot"].GetFloat());
     UnityEngine::Vector3 offsetPos = UnityEngine::Vector3(getConfig().config["XOffset"].GetFloat(), getConfig().config["YOffset"].GetFloat(), getConfig().config["ZOffset"].GetFloat());
     
-
   typedef function_ptr_t<void, UnityEngine::Camera*, UnityEngine::Matrix4x4> type;
 auto method = *reinterpret_cast<type>(il2cpp_functions::resolve_icall("UnityEngine.Camera::set_cullingMatrix_Injected"));
 
@@ -149,24 +150,31 @@ method(c, UnityEngine::Matrix4x4::Ortho(-99999, 99999, -99999, 99999, 0.001f, 99
             rot.z += offsetRot.z;
         }
       }
-    
   } 
 
   c->get_transform()->set_position(pos);
   c->get_transform()->set_eulerAngles(rot);
 }
 
-MAKE_HOOK_OFFSETLESS(VRController_Update, void, VRController* self) {
-    VRController_Update(self);
-    if(self->get_node() == UnityEngine::XR::XRNode::LeftHand) {
-        leftController = self;
-    } else if(self->get_node() == UnityEngine::XR::XRNode::RightHand){
-        rightController = self;
-    }else {
-        rightController = nullptr;
-        leftController = nullptr;
+MAKE_HOOK_OFFSETLESS(AudioTimeSyncController_Start, void, AudioTimeSyncController* self) {
+    AudioTimeSyncController_Start(self);
+    if(getConfig().config["DisableWhileReplay"].GetBool() && (strcmp(getenv("ViewingReplay"), "true") == 0)) replay = true;
+}
+
+MAKE_HOOK_OFFSETLESS(SceneManager_ActiveSceneChanged, void, UnityEngine::SceneManagement::Scene previousActiveScene, UnityEngine::SceneManagement::Scene nextActiveScene) {
+    SceneManager_ActiveSceneChanged(previousActiveScene, nextActiveScene);
+    auto controllers = UnityEngine::Resources::FindObjectsOfTypeAll<VRController*>();
+    for (int i = 0; i < controllers->Length(); i++) {
+        if(controllers->values[i]->get_node() == UnityEngine::XR::XRNode::LeftHand) {
+            leftController = controllers->values[i];
+        } else if(controllers->values[i]->get_node() == UnityEngine::XR::XRNode::RightHand){
+            rightController = controllers->values[i];
+        }
     }
 }
+
+
+
 
 
 void createDefaultConfig()  {
@@ -213,6 +221,10 @@ void createDefaultConfig()  {
         getConfig().config.AddMember("MoveMultiplier", rapidjson::Value().SetFloat(1.0f), allocator);
     }
 
+    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("DisableWhileReplay"))) {
+        getConfig().config.AddMember("DisableWhileReplay", rapidjson::Value().SetBool(true), allocator);
+    }
+
     if(getConfig().config.HasMember("Active")) {return;}
 
     // Add all the default options
@@ -231,6 +243,7 @@ void createDefaultConfig()  {
     getConfig().config.AddMember("ApplyOffsets", rapidjson::Value().SetBool(false), allocator);
     getConfig().config.AddMember("OnlyPos", rapidjson::Value().SetBool(false), allocator);
     getConfig().config.AddMember("MoveWhilePlaying", rapidjson::Value().SetBool(true), allocator);
+    getConfig().config.AddMember("DisableWhileReplay", rapidjson::Value().SetBool(true), allocator);
     getConfig().config.AddMember("XOffset", rapidjson::Value().SetFloat(2.0), allocator);
     getConfig().config.AddMember("YOffset", rapidjson::Value().SetFloat(1.0), allocator);
     getConfig().config.AddMember("ZOffset", rapidjson::Value().SetFloat(-2.0), allocator);
@@ -261,7 +274,9 @@ extern "C" void load() {
     // Install our hooks
     LoggerContextObject logger = getLogger().WithContext("load");
     INSTALL_HOOK_OFFSETLESS(logger, LightManager_OnWillRenderObject, il2cpp_utils::FindMethodUnsafe("", "LightManager", "OnWillRenderObject", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, VRController_Update, il2cpp_utils::FindMethodUnsafe("", "VRController", "Update", 0));
+    //INSTALL_HOOK_OFFSETLESS(logger, VRController_Update, il2cpp_utils::FindMethodUnsafe("", "VRController", "Update", 0));
+    INSTALL_HOOK_OFFSETLESS(logger, SceneManager_ActiveSceneChanged, il2cpp_utils::FindMethodUnsafe("UnityEngine.SceneManagement", "SceneManager", "Internal_ActiveSceneChanged", 2));
+    INSTALL_HOOK_OFFSETLESS(logger, AudioTimeSyncController_Start, il2cpp_utils::FindMethodUnsafe("", "AudioTimeSyncController", "Start", 0));
 
     getLogger().info("Installed all hooks!");
 }
