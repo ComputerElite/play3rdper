@@ -218,7 +218,7 @@ void createDefaultConfig()  {
     }
 
     if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("MoveMultiplier"))) {
-        getConfig().config.AddMember("MoveMultiplier", rapidjson::Value().SetFloat(1.0f), allocator);
+        getConfig().config.AddMember("MoveMultiplier", rapidjson::Value().SetFloat(5.0f), allocator);
     }
 
     if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("DisableWhileReplay"))) {
@@ -250,7 +250,7 @@ void createDefaultConfig()  {
     getConfig().config.AddMember("XRot", rapidjson::Value().SetFloat(0), allocator);
     getConfig().config.AddMember("YRot", rapidjson::Value().SetFloat(0), allocator);
     getConfig().config.AddMember("ZRot", rapidjson::Value().SetFloat(0), allocator);
-    getConfig().config.AddMember("MoveMultiplier", rapidjson::Value().SetFloat(1.0f), allocator);
+    getConfig().config.AddMember("MoveMultiplier", rapidjson::Value().SetFloat(5.0f), allocator);
 
     getConfig().Write(); // Write the config back to disk
 }
