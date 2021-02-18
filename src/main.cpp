@@ -73,7 +73,8 @@ bool replay = false;
 MAKE_HOOK_OFFSETLESS(LightManager_OnWillRenderObject, void, LightManager* self, UnityEngine::Camera* camera) {
   // Do stuff when this function is called 
   LightManager_OnWillRenderObject(self, camera); 
-  if(!(getConfig().config["Active"].GetBool()) || replay) return;
+  //if(!(getConfig().config["Active"].GetBool()) || replay) return;
+  if(!(getConfig().config["Active"].GetBool())) return;
   UnityEngine::Camera* c = UnityEngine::Camera::get_main();
   UnityEngine::Vector3 rot = c->get_transform()->get_eulerAngles();
   UnityEngine::Vector3 pos = c->get_transform()->get_position();
@@ -276,7 +277,7 @@ extern "C" void load() {
     INSTALL_HOOK_OFFSETLESS(logger, LightManager_OnWillRenderObject, il2cpp_utils::FindMethodUnsafe("", "LightManager", "OnWillRenderObject", 0));
     //INSTALL_HOOK_OFFSETLESS(logger, VRController_Update, il2cpp_utils::FindMethodUnsafe("", "VRController", "Update", 0));
     INSTALL_HOOK_OFFSETLESS(logger, SceneManager_ActiveSceneChanged, il2cpp_utils::FindMethodUnsafe("UnityEngine.SceneManagement", "SceneManager", "Internal_ActiveSceneChanged", 2));
-    INSTALL_HOOK_OFFSETLESS(logger, AudioTimeSyncController_Start, il2cpp_utils::FindMethodUnsafe("", "AudioTimeSyncController", "Start", 0));
+    //INSTALL_HOOK_OFFSETLESS(logger, AudioTimeSyncController_Start, il2cpp_utils::FindMethodUnsafe("", "AudioTimeSyncController", "Start", 0));
 
     getLogger().info("Installed all hooks!");
 }
