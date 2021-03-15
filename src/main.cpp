@@ -184,6 +184,7 @@ extern "C" void setup(ModInfo& info) {
 extern "C" void load() {
     getLogger().info("Installing hooks...");
     il2cpp_functions::Init();
+    getModConfig().Init(modInfo);
     QuestUI::Init();
     custom_types::Register::RegisterType<Play3rdPer::Play3rdPerViewController>();
     QuestUI::Register::RegisterModSettingsViewController<Play3rdPer::Play3rdPerViewController*>(modInfo);
