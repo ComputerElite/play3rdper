@@ -20,7 +20,12 @@
         }
       },
       {
-        "id": "codegen",
+        "id": "questui",
+        "versionRange": "*",
+        "additionalData": {}
+      },
+      {
+        "id": "custom-types",
         "versionRange": "*",
         "additionalData": {}
       }
@@ -38,7 +43,7 @@
           ]
         }
       },
-      "version": "1.0.0"
+      "version": "1.1.6"
     },
     {
       "dependency": {
@@ -51,26 +56,18 @@
     {
       "dependency": {
         "id": "libil2cpp",
-        "versionRange": "0.1.2",
+        "versionRange": "0.2.0",
         "additionalData": {}
       },
-      "version": "0.1.2"
+      "version": "0.2.0"
     },
     {
       "dependency": {
-        "id": "codegen",
+        "id": "custom-types",
         "versionRange": "*",
         "additionalData": {}
       },
-      "version": "0.4.0"
-    },
-    {
-      "dependency": {
-        "id": "beatsaber-hook",
-        "versionRange": "^0.8.0",
-        "additionalData": {}
-      },
-      "version": "0.8.4"
+      "version": "0.5.0"
     }
   ]
 }

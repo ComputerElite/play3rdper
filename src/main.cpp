@@ -1,4 +1,5 @@
 #include "main.hpp"
+#include "ModConfig.hpp"
 #include "GlobalNamespace/LightManager.hpp"
 #include "GlobalNamespace/VRControllersInputManager.hpp"
 #include "GlobalNamespace/VRController.hpp"
@@ -20,16 +21,13 @@
 #include "Play3rdPerViewController.hpp"
 
 #include "questui/shared/QuestUI.hpp"
+#include "config-utils/shared/config-utils.hpp"
 #include "custom-types/shared/register.hpp"
 
 using namespace GlobalNamespace;
 
 static ModInfo modInfo;
-Configuration& getConfig() {
-    static Configuration config(modInfo);
-    config.Load();
-    return config;
-}
+DEFINE_CONFIG(ModConfig);
 
 Logger& getLogger() {
     static Logger* logger = new Logger(modInfo, LoggerOptions(false, true));
@@ -60,8 +58,8 @@ UnityEngine::Matrix4x4 TranslateMatrix(UnityEngine::Vector3 vector)
 
 VRController* rightController = nullptr;
 VRController* leftController = nullptr;
-UnityEngine::Vector3 saberRot = UnityEngine::Vector3(getConfig().config["XRot"].GetFloat(), getConfig().config["YRot"].GetFloat(), getConfig().config["ZRot"].GetFloat());
-UnityEngine::Vector3 saberPos = UnityEngine::Vector3(getConfig().config["XOffset"].GetFloat(), getConfig().config["YOffset"].GetFloat(), getConfig().config["ZOffset"].GetFloat());
+UnityEngine::Vector3 saberRot = UnityEngine::Vector3(getModConfig().XRot.GetValue(), getModConfig().YRot.GetValue(), getModConfig().ZRot.GetValue());
+UnityEngine::Vector3 saberPos = UnityEngine::Vector3(getModConfig().XOffset.GetValue(), getModConfig().YOffset.GetValue(), getModConfig().ZOffset.GetValue());
 
 UnityEngine::Vector3 prevPos = UnityEngine::Vector3(0.0f, 0.0f, 0.0f);
 UnityEngine::Vector3 prevRot = UnityEngine::Vector3(0.0f, 0.0f, 0.0f);
@@ -74,78 +72,78 @@ MAKE_HOOK_OFFSETLESS(LightManager_OnWillRenderObject, void, LightManager* self, 
   // Do stuff when this function is called 
   LightManager_OnWillRenderObject(self, camera); 
   //if(!(getConfig().config["Active"].GetBool()) || replay) return;
-  if(!(getConfig().config["Active"].GetBool())) return;
+  if(!getModConfig().Active.GetValue()) return;
   UnityEngine::Camera* c = UnityEngine::Camera::get_main();
   UnityEngine::Vector3 rot = c->get_transform()->get_eulerAngles();
   UnityEngine::Vector3 pos = c->get_transform()->get_position();
 
-  if(getConfig().config["LeftSaber"].GetBool() && getConfig().config["SwapSaber"].GetBool() && rightController != nullptr) {
+  if(getModConfig().LeftSaber.GetValue() && getModConfig().SwapSaber.GetValue() && rightController != nullptr) {
         saberPos = rightController->get_position();
         saberRot = rightController->get_rotation().get_eulerAngles();
-    } else if(getConfig().config["LeftSaber"].GetBool() && leftController != nullptr) {
+    } else if(getModConfig().LeftSaber.GetValue() && leftController != nullptr) {
         saberPos = leftController->get_position();
         saberRot = leftController->get_rotation().get_eulerAngles();
     }
 
-    if(getConfig().config["MoveWhilePlaying"].GetBool()) {
+    if(getModConfig().MoveWhilePlaying.GetValue()) {
         GlobalNamespace::OVRInput::Update();
         if(GlobalNamespace::OVRInput::Get(GlobalNamespace::OVRInput::Button::Four, OVRInput::Controller::Touch)) {
             UnityEngine::Vector3 posDifference = pos - prevPos;
-            getConfig().config["XOffset"].SetFloat(posDifference.x * getConfig().config["MoveMultiplier"].GetFloat() + getConfig().config["XOffset"].GetFloat());
-            getConfig().config["YOffset"].SetFloat(posDifference.y * getConfig().config["MoveMultiplier"].GetFloat() + getConfig().config["YOffset"].GetFloat());
-            getConfig().config["ZOffset"].SetFloat(posDifference.z * getConfig().config["MoveMultiplier"].GetFloat() + getConfig().config["ZOffset"].GetFloat());
+            getModConfig().XOffset.SetValue(posDifference.x * getModConfig().MoveMultiplier.GetValue() + getModConfig().XOffset.GetValue());
+            getModConfig().YOffset.SetValue(posDifference.y * getModConfig().MoveMultiplier.GetValue() + getModConfig().YOffset.GetValue());
+            getModConfig().ZOffset.SetValue(posDifference.z * getModConfig().MoveMultiplier.GetValue() + getModConfig().ZOffset.GetValue());
         }
         prevPos = pos;
         prevRot = rot;
     }
 
-    UnityEngine::Vector3 offsetRot = UnityEngine::Vector3(getConfig().config["XRot"].GetFloat(), getConfig().config["YRot"].GetFloat(), getConfig().config["ZRot"].GetFloat());
-    UnityEngine::Vector3 offsetPos = UnityEngine::Vector3(getConfig().config["XOffset"].GetFloat(), getConfig().config["YOffset"].GetFloat(), getConfig().config["ZOffset"].GetFloat());
+    UnityEngine::Vector3 offsetRot = UnityEngine::Vector3(getModConfig().XRot.GetValue(), getModConfig().YRot.GetValue(), getModConfig().ZRot.GetValue());
+    UnityEngine::Vector3 offsetPos = UnityEngine::Vector3(getModConfig().XOffset.GetValue(), getModConfig().YOffset.GetValue(), getModConfig().ZOffset.GetValue());
     
   typedef function_ptr_t<void, UnityEngine::Camera*, UnityEngine::Matrix4x4> type;
 auto method = *reinterpret_cast<type>(il2cpp_functions::resolve_icall("UnityEngine.Camera::set_cullingMatrix_Injected"));
 
 method(c, UnityEngine::Matrix4x4::Ortho(-99999, 99999, -99999, 99999, 0.001f, 99999) * TranslateMatrix(UnityEngine::Vector3::get_forward() * -99999 / 2) * c->get_worldToCameraMatrix());
 
-  if(getConfig().config["Fixed"].GetBool()) {
-    if(getConfig().config["LeftSaber"].GetBool()) { 
-        pos.x = saberPos.x + (getConfig().config["ApplyOffsets"].GetBool() ? offsetPos.x : 0.0f);
-        pos.y = saberPos.y + (getConfig().config["ApplyOffsets"].GetBool() ? offsetPos.y : 0.0f);
-        pos.z = saberPos.z + (getConfig().config["ApplyOffsets"].GetBool() ? offsetPos.z : 0.0f);
+  if(getModConfig().Fixed.GetValue()) {
+    if(getModConfig().LeftSaber.GetValue()) { 
+        pos.x = saberPos.x + (getModConfig().ApplyOffsets.GetValue() ? offsetPos.x : 0.0f);
+        pos.y = saberPos.y + (getModConfig().ApplyOffsets.GetValue() ? offsetPos.y : 0.0f);
+        pos.z = saberPos.z + (getModConfig().ApplyOffsets.GetValue() ? offsetPos.z : 0.0f);
 
-        if(!getConfig().config["OnlyPos"].GetBool()) {
-            rot.x = saberRot.x + (getConfig().config["ApplyOffsets"].GetBool() ? offsetRot.x : 0.0f);
-            rot.y = saberRot.y + (getConfig().config["ApplyOffsets"].GetBool() ? offsetRot.y : 0.0f);
-            rot.z = saberRot.z + (getConfig().config["ApplyOffsets"].GetBool() ? offsetRot.z : 0.0f);
+        if(!getModConfig().OnlyPos.GetValue()) {
+            rot.x = saberRot.x + (getModConfig().ApplyOffsets.GetValue() ? offsetRot.x : 0.0f);
+            rot.y = saberRot.y + (getModConfig().ApplyOffsets.GetValue() ? offsetRot.y : 0.0f);
+            rot.z = saberRot.z + (getModConfig().ApplyOffsets.GetValue() ? offsetRot.z : 0.0f);
         }
     } else {
         pos.x = offsetPos.x;
         pos.y = offsetPos.y;
         pos.z = offsetPos.z;
 
-        if(!getConfig().config["OnlyPos"].GetBool()) {
+        if(!getModConfig().OnlyPos.GetValue()) {
             rot.x = offsetRot.z;
             rot.y = offsetRot.y;
             rot.z = offsetRot.z;
         }
     }
   } else {
-      if(getConfig().config["LeftSaber"].GetBool()) {
-        pos.x += saberPos.x + (getConfig().config["ApplyOffsets"].GetBool() ? offsetPos.x : 0.0f);
-        pos.y += saberPos.y + (getConfig().config["ApplyOffsets"].GetBool() ? offsetPos.y : 0.0f);
-        pos.z += saberPos.z + (getConfig().config["ApplyOffsets"].GetBool() ? offsetPos.z : 0.0f);
+      if(getModConfig().LeftSaber.GetValue()) {
+        pos.x += saberPos.x + (getModConfig().ApplyOffsets.GetValue() ? offsetPos.x : 0.0f);
+        pos.y += saberPos.y + (getModConfig().ApplyOffsets.GetValue() ? offsetPos.y : 0.0f);
+        pos.z += saberPos.z + (getModConfig().ApplyOffsets.GetValue() ? offsetPos.z : 0.0f);
 
-        if(!getConfig().config["OnlyPos"].GetBool()) {
-            rot.x += saberRot.x + (getConfig().config["ApplyOffsets"].GetBool() ? offsetRot.x : 0.0f);
-            rot.y += saberRot.y + (getConfig().config["ApplyOffsets"].GetBool() ? offsetRot.y : 0.0f);
-            rot.z += saberRot.z + (getConfig().config["ApplyOffsets"].GetBool() ? offsetRot.z : 0.0f);
+        if(!getModConfig().OnlyPos.GetValue()) {
+            rot.x += saberRot.x + (getModConfig().ApplyOffsets.GetValue() ? offsetRot.x : 0.0f);
+            rot.y += saberRot.y + (getModConfig().ApplyOffsets.GetValue() ? offsetRot.y : 0.0f);
+            rot.z += saberRot.z + (getModConfig().ApplyOffsets.GetValue() ? offsetRot.z : 0.0f);
         }
       } else {
         pos.x += offsetPos.x;
         pos.y += offsetPos.y;
         pos.z += offsetPos.z;
 
-        if(!getConfig().config["OnlyPos"].GetBool()) {
+        if(!getModConfig().OnlyPos.GetValue()) {
             rot.x += offsetRot.z;
             rot.y += offsetRot.y;
             rot.z += offsetRot.z;
@@ -159,7 +157,7 @@ method(c, UnityEngine::Matrix4x4::Ortho(-99999, 99999, -99999, 99999, 0.001f, 99
 
 MAKE_HOOK_OFFSETLESS(AudioTimeSyncController_Start, void, AudioTimeSyncController* self) {
     AudioTimeSyncController_Start(self);
-    if(getConfig().config["DisableWhileReplay"].GetBool() && (strcmp(getenv("ViewingReplay"), "true") == 0)) replay = true;
+    if(getModConfig().DisableWhileReplay.GetValue() && (strcmp(getenv("ViewingReplay"), "true") == 0)) replay = true;
 }
 
 MAKE_HOOK_OFFSETLESS(SceneManager_ActiveSceneChanged, void, UnityEngine::SceneManagement::Scene previousActiveScene, UnityEngine::SceneManagement::Scene nextActiveScene) {
@@ -175,94 +173,11 @@ MAKE_HOOK_OFFSETLESS(SceneManager_ActiveSceneChanged, void, UnityEngine::SceneMa
 }
 
 
-
-
-
-void createDefaultConfig()  {
-
-    rapidjson::Document::AllocatorType& allocator = getConfig().config.GetAllocator();
-
-    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("XRot"))) {
-        getConfig().config.AddMember("XRot", rapidjson::Value().SetFloat(0), allocator);
-    }
-
-    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("YRot"))) {
-        getConfig().config.AddMember("YRot", rapidjson::Value().SetFloat(0), allocator);
-    }
-
-    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("ZRot"))) {
-        getConfig().config.AddMember("ZRot", rapidjson::Value().SetFloat(0), allocator);
-    }
-
-    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("Fixed"))) {
-        getConfig().config.AddMember("Fixed", rapidjson::Value().SetBool(false), allocator);
-    }
-
-    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("LeftSaber"))) {
-        getConfig().config.AddMember("LeftSaber", rapidjson::Value().SetBool(false), allocator);
-    }
-
-    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("SwapSaber"))) {
-        getConfig().config.AddMember("SwapSaber", rapidjson::Value().SetBool(false), allocator);
-    }
-
-    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("ApplyOffsets"))) {
-        getConfig().config.AddMember("ApplyOffsets", rapidjson::Value().SetBool(false), allocator);
-    }
-
-    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("OnlyPos"))) {
-        getConfig().config.AddMember("OnlyPos", rapidjson::Value().SetBool(false), allocator);
-    }
-
-    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("MoveWhilePlaying"))) {
-        getConfig().config.AddMember("MoveWhilePlaying", rapidjson::Value().SetBool(true), allocator);
-    }
-
-    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("MoveMultiplier"))) {
-        getConfig().config.AddMember("MoveMultiplier", rapidjson::Value().SetFloat(5.0f), allocator);
-    }
-
-    if(getConfig().config.HasMember("Active") && !(getConfig().config.HasMember("DisableWhileReplay"))) {
-        getConfig().config.AddMember("DisableWhileReplay", rapidjson::Value().SetBool(true), allocator);
-    }
-
-    if(getConfig().config.HasMember("Active")) {return;}
-
-    // Add all the default options
-    getConfig().config.RemoveAllMembers(); // Empty the config - it should already be empty but just to be sure
-    getConfig().config.SetObject(); // Set the base of the config to a value that can contain keys
-
-    // Get what is used to allocate memory in the config file
-    // rapidjson::Document::AllocatorType& allocator = getConfig().config.GetAllocator();
-
-    // Add a member to the config, using the allocator
-
-    getConfig().config.AddMember("Active", rapidjson::Value().SetBool(true), allocator);
-    getConfig().config.AddMember("Fixed", rapidjson::Value().SetBool(false), allocator);
-    getConfig().config.AddMember("LeftSaber", rapidjson::Value().SetBool(false), allocator);
-    getConfig().config.AddMember("SwapSaber", rapidjson::Value().SetBool(false), allocator);
-    getConfig().config.AddMember("ApplyOffsets", rapidjson::Value().SetBool(false), allocator);
-    getConfig().config.AddMember("OnlyPos", rapidjson::Value().SetBool(false), allocator);
-    getConfig().config.AddMember("MoveWhilePlaying", rapidjson::Value().SetBool(true), allocator);
-    getConfig().config.AddMember("DisableWhileReplay", rapidjson::Value().SetBool(true), allocator);
-    getConfig().config.AddMember("XOffset", rapidjson::Value().SetFloat(2.0), allocator);
-    getConfig().config.AddMember("YOffset", rapidjson::Value().SetFloat(1.0), allocator);
-    getConfig().config.AddMember("ZOffset", rapidjson::Value().SetFloat(-2.0), allocator);
-    getConfig().config.AddMember("XRot", rapidjson::Value().SetFloat(0), allocator);
-    getConfig().config.AddMember("YRot", rapidjson::Value().SetFloat(0), allocator);
-    getConfig().config.AddMember("ZRot", rapidjson::Value().SetFloat(0), allocator);
-    getConfig().config.AddMember("MoveMultiplier", rapidjson::Value().SetFloat(5.0f), allocator);
-
-    getConfig().Write(); // Write the config back to disk
-}
-
 extern "C" void setup(ModInfo& info) {
     info.id = ID;
     info.version = VERSION;
     modInfo = info;
 	
-    getConfig().Load(); // Load the config file
-    createDefaultConfig();
     getLogger().info("Completed setup!");
 }
 
