@@ -30,7 +30,7 @@ include $(PREBUILT_SHARED_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE := beatsaber-hook_1_1_6
 LOCAL_EXPORT_C_INCLUDES := extern/beatsaber-hook
-LOCAL_SRC_FILES := extern/libbeatsaber-hook_1_1_6.so
+LOCAL_SRC_FILES := extern/libbeatsaber-hook_1_2_3.so
 LOCAL_CPP_FEATURES += exceptions
 include $(PREBUILT_SHARED_LIBRARY)
 # Creating prebuilt for dependency: codegen - version: 0.3.6
