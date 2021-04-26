@@ -186,8 +186,7 @@ extern "C" void load() {
     il2cpp_functions::Init();
     getModConfig().Init(modInfo);
     QuestUI::Init();
-    custom_types::Register::RegisterType<Play3rdPer::Play3rdPerViewController>();
-    QuestUI::Register::RegisterModSettingsViewController<Play3rdPer::Play3rdPerViewController*>(modInfo);
+    QuestUI::Register::RegisterModSettingsViewController(modInfo, DidActivate);
     // Install our hooks
     LoggerContextObject logger = getLogger().WithContext("load");
     INSTALL_HOOK_OFFSETLESS(logger, LightManager_OnWillRenderObject, il2cpp_utils::FindMethodUnsafe("", "LightManager", "OnWillRenderObject", 0));

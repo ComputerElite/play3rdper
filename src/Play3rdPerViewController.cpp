@@ -26,15 +26,15 @@ using namespace UnityEngine;
 using namespace UnityEngine::UI;
 using namespace UnityEngine::Events;
 using namespace HMUI;
-using namespace Play3rdPer;
+//using namespace Play3rdPer;
 
-DEFINE_CLASS(Play3rdPerViewController);
+//DEFINE_CLASS(Play3rdPerViewController);
 
 
-void Play3rdPerViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling){
+void DidActivate(ViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling){
     if(firstActivation) {
-        get_gameObject()->AddComponent<Touchable*>();
-        GameObject* container = BeatSaberUI::CreateScrollableSettingsContainer(get_transform());
+        self->get_gameObject()->AddComponent<Touchable*>();
+        GameObject* container = BeatSaberUI::CreateScrollableSettingsContainer(self->get_transform());
 
         // Active
         AddConfigValueToggle(container->get_transform(), getModConfig().Active);
