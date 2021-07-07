@@ -2,8 +2,8 @@
   "sharedDir": "shared",
   "dependenciesDir": "extern",
   "info": {
-    "name": "Crash Mod",
-    "id": "CrashMod",
+    "name": "3rd Person Mod",
+    "id": "Play3rdPer",
     "version": "0.1.0",
     "url": null,
     "additionalData": {}
