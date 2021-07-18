@@ -60,6 +60,12 @@ void DidActivate(ViewController* self, bool firstActivation, bool addedToHierarc
         // MoveMultiplier
         QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueIncrementFloat(container->get_transform(), getModConfig().MoveMultiplier, 1, 1.0f, -100, 100)->get_gameObject(), "If you hold the Y button while moving your head, you can adjust the camera position while playing. This multiplier decides how fast you move the camera.");
 
+        // WashingMachine
+        QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueToggle(container->get_transform(), getModConfig().WashingMachine)->get_gameObject(), "Wanna rotate a lot? Here ya go");
+        
+        // WashingMachineSpeed
+        QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueIncrementFloat(container->get_transform(), getModConfig().WashingMachineSpeed, 1, 0.5f, -100, 100)->get_gameObject(), "Speed at which you are rotating");
+
         /*
         Enable later once replay is out
         // DisableWhileReplay

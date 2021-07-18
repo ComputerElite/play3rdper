@@ -11,6 +11,8 @@ DECLARE_CONFIG(ModConfig,
     CONFIG_VALUE(OnlyPos, bool, "Only apply position", false);
     CONFIG_VALUE(MoveWhilePlaying, bool, "Move camera while playing", true);
     CONFIG_VALUE(DisableWhileReplay, bool, "Disable While Replay", true);
+    CONFIG_VALUE(WashingMachine, bool, "Spin camera", false);
+    CONFIG_VALUE(WashingMachineSpeed, float, "Spinning speed", 0);
     CONFIG_VALUE(XOffset, float, "X Offset", 2.0);
     CONFIG_VALUE(YOffset, float, "Y Offset", 1.0);
     CONFIG_VALUE(ZOffset, float, "Z Offset", -2.0);
@@ -28,6 +30,8 @@ DECLARE_CONFIG(ModConfig,
         CONFIG_INIT_VALUE(OnlyPos);
         CONFIG_INIT_VALUE(MoveWhilePlaying);
         CONFIG_INIT_VALUE(DisableWhileReplay);
+        CONFIG_INIT_VALUE(WashingMachine);
+        CONFIG_INIT_VALUE(WashingMachineSpeed);
         CONFIG_INIT_VALUE(XOffset);
         CONFIG_INIT_VALUE(YOffset);
         CONFIG_INIT_VALUE(ZOffset);

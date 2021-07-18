@@ -32,6 +32,8 @@
 #include "config-utils/shared/config-utils.hpp"
 #include "custom-types/shared/register.hpp"
 
+#include <math.h>
+
 using namespace GlobalNamespace;
 
 static ModInfo modInfo;
@@ -75,6 +77,7 @@ UnityEngine::Vector3 prevRot = UnityEngine::Vector3(0.0f, 0.0f, 0.0f);
 // UnityEngine::Vector3 prevRotOffset = UnityEngine::Vector3(0.0f, 0.0f, 0.0f);
 
 bool replay = false;
+float rotated = 0.0f;
 
 MAKE_HOOK_MATCH(LightManager_OnWillRenderObject, &LightManager::OnWillRenderObject, void, LightManager* self) {
   // Do stuff when this function is called 
@@ -158,6 +161,11 @@ method(c, UnityEngine::Matrix4x4::Ortho(-99999, 99999, -99999, 99999, 0.001f, 99
         }
       }
   } 
+
+  if(getModConfig().WashingMachine.GetValue()) {
+      rotated = remainderf(getModConfig().WashingMachineSpeed.GetValue() + rotated, 360.0f);
+      rot.z += rotated;
+  }
 
   c->get_transform()->set_position(pos);
   c->get_transform()->set_eulerAngles(rot);
