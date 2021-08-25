@@ -78,6 +78,7 @@ UnityEngine::Vector3 prevRot = UnityEngine::Vector3(0.0f, 0.0f, 0.0f);
 
 bool replay = false;
 float rotated = 0.0f;
+int framesPressed = 0;
 
 MAKE_HOOK_MATCH(LightManager_OnWillRenderObject, &LightManager::OnWillRenderObject, void, LightManager* self) {
   // Do stuff when this function is called 
@@ -96,7 +97,21 @@ MAKE_HOOK_MATCH(LightManager_OnWillRenderObject, &LightManager::OnWillRenderObje
         saberRot = leftController->get_rotation().get_eulerAngles();
     }
 
-    if(getModConfig().MoveWhilePlaying.GetValue()) {
+    if(GlobalNamespace::OVRInput::Get(GlobalNamespace::OVRInput::Button::One, OVRInput::Controller::Touch) && GlobalNamespace::OVRInput::Get(GlobalNamespace::OVRInput::Button::Two, OVRInput::Controller::Touch) && GlobalNamespace::OVRInput::Get(GlobalNamespace::OVRInput::Button::Three, OVRInput::Controller::Touch) && GlobalNamespace::OVRInput::Get(GlobalNamespace::OVRInput::Button::Four, OVRInput::Controller::Touch) && GlobalNamespace::OVRInput::Get(GlobalNamespace::OVRInput::Button::PrimaryHandTrigger, OVRInput::Controller::Touch) && GlobalNamespace::OVRInput::Get(GlobalNamespace::OVRInput::Button::PrimaryIndexTrigger, OVRInput::Controller::Touch) && GlobalNamespace::OVRInput::Get(GlobalNamespace::OVRInput::Button::SecondaryHandTrigger, OVRInput::Controller::Touch) && GlobalNamespace::OVRInput::Get(GlobalNamespace::OVRInput::Button::SecondaryIndexTrigger, OVRInput::Controller::Touch)) {
+        framesPressed++;
+        if(framesPressed >= 1000) {
+            getModConfig().XOffset.SetValue(0.0f);
+            getModConfig().YOffset.SetValue(0.0f);
+            getModConfig().ZOffset.SetValue(0.0f);
+            getModConfig().XRot.SetValue(0.0f);
+            getModConfig().YRot.SetValue(0.0f);
+            getModConfig().ZRot.SetValue(0.0f);
+            getModConfig().WashingMachine.SetValue(false);
+            getModConfig().Active.SetValue(false);
+            framesPressed = 0;
+        }
+    }
+    else if(getModConfig().MoveWhilePlaying.GetValue()) {
         GlobalNamespace::OVRInput::Update();
         if(GlobalNamespace::OVRInput::Get(GlobalNamespace::OVRInput::Button::Four, OVRInput::Controller::Touch)) {
             UnityEngine::Vector3 posDifference = pos - prevPos;
@@ -107,6 +122,7 @@ MAKE_HOOK_MATCH(LightManager_OnWillRenderObject, &LightManager::OnWillRenderObje
         prevPos = pos;
         prevRot = rot;
     }
+    else framesPressed = 0;
 
     UnityEngine::Vector3 offsetRot = UnityEngine::Vector3(getModConfig().XRot.GetValue(), getModConfig().YRot.GetValue(), getModConfig().ZRot.GetValue());
     UnityEngine::Vector3 offsetPos = UnityEngine::Vector3(getModConfig().XOffset.GetValue(), getModConfig().YOffset.GetValue(), getModConfig().ZOffset.GetValue());
