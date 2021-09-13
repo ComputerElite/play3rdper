@@ -219,6 +219,7 @@ extern "C" void load() {
     getModConfig().Init(modInfo);
     QuestUI::Init();
     QuestUI::Register::RegisterModSettingsViewController(modInfo, DidActivate);
+    QuestUI::Register::RegisterMainMenuModSettingsViewController(modInfo, DidActivate);
     // Install our hooks
     LoggerContextObject logger = getLogger().WithContext("load");
     INSTALL_HOOK(logger, LightManager_OnWillRenderObject);
