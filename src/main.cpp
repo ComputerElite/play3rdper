@@ -72,9 +72,6 @@ UnityEngine::Vector3 saberRot = UnityEngine::Vector3(getModConfig().XRot.GetValu
 UnityEngine::Vector3 saberPos = UnityEngine::Vector3(getModConfig().XOffset.GetValue(), getModConfig().YOffset.GetValue(), getModConfig().ZOffset.GetValue());
 
 UnityEngine::Vector3 prevPos = UnityEngine::Vector3(0.0f, 0.0f, 0.0f);
-UnityEngine::Vector3 prevRot = UnityEngine::Vector3(0.0f, 0.0f, 0.0f);
-// UnityEngine::Vector3 prevPosOffset = UnityEngine::Vector3(0.0f, 0.0f, 0.0f);
-// UnityEngine::Vector3 prevRotOffset = UnityEngine::Vector3(0.0f, 0.0f, 0.0f);
 
 bool replay = false;
 float rotated = 0.0f;
@@ -88,6 +85,7 @@ MAKE_HOOK_MATCH(LightManager_OnWillRenderObject, &LightManager::OnWillRenderObje
   UnityEngine::Camera* c = UnityEngine::Camera::get_main();
   UnityEngine::Vector3 rot = c->get_transform()->get_eulerAngles();
   UnityEngine::Vector3 pos = c->get_transform()->get_position();
+
 
   if(getModConfig().LeftSaber.GetValue() && getModConfig().SwapSaber.GetValue() && rightController != nullptr) {
         saberPos = rightController->get_position();
@@ -112,15 +110,16 @@ MAKE_HOOK_MATCH(LightManager_OnWillRenderObject, &LightManager::OnWillRenderObje
         }
     }
     else if(getModConfig().MoveWhilePlaying.GetValue()) {
+        UnityEngine::Vector3 diffPos = getModConfig().MoveController.GetValue() == 0 ? c->get_transform()->get_position() : (getModConfig().MoveController.GetValue() == 1 ? leftController->get_position() : rightController->get_position());
         GlobalNamespace::OVRInput::Update();
         if(GlobalNamespace::OVRInput::Get(GlobalNamespace::OVRInput::Button::Four, OVRInput::Controller::Touch)) {
-            UnityEngine::Vector3 posDifference = pos - prevPos;
+            UnityEngine::Vector3 posDifference = diffPos - prevPos;
+
             getModConfig().XOffset.SetValue(posDifference.x * getModConfig().MoveMultiplier.GetValue() + getModConfig().XOffset.GetValue());
             getModConfig().YOffset.SetValue(posDifference.y * getModConfig().MoveMultiplier.GetValue() + getModConfig().YOffset.GetValue());
             getModConfig().ZOffset.SetValue(posDifference.z * getModConfig().MoveMultiplier.GetValue() + getModConfig().ZOffset.GetValue());
         }
-        prevPos = pos;
-        prevRot = rot;
+        prevPos = diffPos;
     }
     else framesPressed = 0;
 

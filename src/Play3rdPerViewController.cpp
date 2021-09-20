@@ -93,5 +93,8 @@ void DidActivate(ViewController* self, bool firstActivation, bool addedToHierarc
 
         // ZR
         QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueIncrementFloat(container->get_transform(), getModConfig().ZRot, 0, 5.0f, -360, 360)->get_gameObject(), "Offset on the z rotation");
+
+        // MoveController
+        QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueIncrementInt(container->get_transform(), getModConfig().MoveController, 1, 0, 2)->get_gameObject(), "What is used to move the camera (0 = Head, 1 = Left Controller, 2 = Right Controller)");
     }
 }
