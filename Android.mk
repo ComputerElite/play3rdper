@@ -62,7 +62,7 @@ LOCAL_SHARED_LIBRARIES += codegen
 LOCAL_SHARED_LIBRARIES += questui
 LOCAL_SHARED_LIBRARIES += custom-types
 LOCAL_LDLIBS += -llog
-LOCAL_CFLAGS += -I'extern/libil2cpp/il2cpp/libil2cpp' -DID='"Play3rdPer"' -DVERSION='"0.4.1"' -I'./shared' -I'./extern' -isystem'extern/codegen/include'
+LOCAL_CFLAGS += -I'extern/libil2cpp/il2cpp/libil2cpp' -DID='"Play3rdPer"' -DVERSION='"0.5.0"' -I'./shared' -I'./extern' -isystem'extern/codegen/include'
 LOCAL_CPPFLAGS += -std=c++2a
 LOCAL_C_INCLUDES += ./include ./src
 include $(BUILD_SHARED_LIBRARY)
