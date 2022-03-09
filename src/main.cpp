@@ -193,12 +193,12 @@ MAKE_HOOK_MATCH(AudioTimeSyncController_Start, &AudioTimeSyncController::Start, 
 
 MAKE_HOOK_MATCH(SceneManager_ActiveSceneChanged, &UnityEngine::SceneManagement::SceneManager::Internal_ActiveSceneChanged, void, UnityEngine::SceneManagement::Scene previousActiveScene, UnityEngine::SceneManagement::Scene nextActiveScene) {
     SceneManager_ActiveSceneChanged(previousActiveScene, nextActiveScene);
-    auto controllers = UnityEngine::Resources::FindObjectsOfTypeAll<VRController*>();
-    for (int i = 0; i < controllers->Length(); i++) {
-        if(controllers->values[i]->get_node() == UnityEngine::XR::XRNode::LeftHand) {
-            leftController = controllers->values[i];
-        } else if(controllers->values[i]->get_node() == UnityEngine::XR::XRNode::RightHand){
-            rightController = controllers->values[i];
+    ArrayW controllers = UnityEngine::Resources::FindObjectsOfTypeAll<VRController*>();
+    for (int i = 0; i < controllers.Length(); i++) {
+        if(controllers[i]->get_node() == UnityEngine::XR::XRNode::LeftHand) {
+            leftController = controllers[i];
+        } else if(controllers[i]->get_node() == UnityEngine::XR::XRNode::RightHand){
+            rightController = controllers[i];
         }
     }
 }
