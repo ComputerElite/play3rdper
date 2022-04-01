@@ -77,9 +77,9 @@ bool replay = false;
 float rotated = 0.0f;
 int framesPressed = 0;
 
-MAKE_HOOK_MATCH(LightManager_OnWillRenderObject, &LightManager::OnWillRenderObject, void, LightManager* self) {
+MAKE_HOOK_MATCH(LightManager_OnWillRenderObject, &LightManager::OnCameraPreRender, void, LightManager* self, UnityEngine::Camera* camera) {
   // Do stuff when this function is called 
-  LightManager_OnWillRenderObject(self); 
+  LightManager_OnWillRenderObject(self, camera); 
   //if(!(getConfig().config["Active"].GetBool()) || replay) return;
   if(!getModConfig().Active.GetValue()) return;
   UnityEngine::Camera* c = UnityEngine::Camera::get_main();
