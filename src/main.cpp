@@ -74,14 +74,31 @@ UnityEngine::Vector3 saberPos = UnityEngine::Vector3(getModConfig().XOffset.GetV
 UnityEngine::Vector3 prevPos = UnityEngine::Vector3(0.0f, 0.0f, 0.0f);
 
 bool replay = false;
+bool shouldGetControllers = true;
 float rotated = 0.0f;
 int framesPressed = 0;
+int frame = 0;
 
 MAKE_HOOK_MATCH(LightManager_OnWillRenderObject, &LightManager::OnCameraPreRender, void, LightManager* self, UnityEngine::Camera* camera) {
   // Do stuff when this function is called 
   LightManager_OnWillRenderObject(self, camera); 
   //if(!(getConfig().config["Active"].GetBool()) || replay) return;
-  if(!getModConfig().Active.GetValue()) return;
+  frame++;
+  if(!getModConfig().Active.GetValue() || frame < 20) return;
+  frame = 20;
+
+if(shouldGetControllers) {
+    ArrayW controllers = UnityEngine::Resources::FindObjectsOfTypeAll<VRController*>();
+    for (int i = 0; i < controllers.Length(); i++) {
+        if(controllers[i]->get_node() == UnityEngine::XR::XRNode::LeftHand) {
+            leftController = controllers[i];
+        } else if(controllers[i]->get_node() == UnityEngine::XR::XRNode::RightHand){
+            rightController = controllers[i];
+        }
+    }
+    shouldGetControllers = false;
+}
+
   UnityEngine::Camera* c = UnityEngine::Camera::get_main();
   UnityEngine::Vector3 rot = c->get_transform()->get_eulerAngles();
   UnityEngine::Vector3 pos = c->get_transform()->get_position();
@@ -192,20 +209,14 @@ MAKE_HOOK_MATCH(AudioTimeSyncController_Start, &AudioTimeSyncController::Start, 
 }
 
 MAKE_HOOK_MATCH(SceneManager_ActiveSceneChanged, &UnityEngine::SceneManagement::SceneManager::Internal_ActiveSceneChanged, void, UnityEngine::SceneManagement::Scene previousActiveScene, UnityEngine::SceneManagement::Scene nextActiveScene) {
+    shouldGetControllers = true;
+    frame = 0;
     SceneManager_ActiveSceneChanged(previousActiveScene, nextActiveScene);
-    ArrayW controllers = UnityEngine::Resources::FindObjectsOfTypeAll<VRController*>();
-    for (int i = 0; i < controllers.Length(); i++) {
-        if(controllers[i]->get_node() == UnityEngine::XR::XRNode::LeftHand) {
-            leftController = controllers[i];
-        } else if(controllers[i]->get_node() == UnityEngine::XR::XRNode::RightHand){
-            rightController = controllers[i];
-        }
-    }
 }
 
 
 extern "C" void setup(ModInfo& info) {
-    info.id = ID;
+    info.id = MOD_ID;
     info.version = VERSION;
     modInfo = info;
 	
