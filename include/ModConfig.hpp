@@ -21,25 +21,4 @@ DECLARE_CONFIG(ModConfig,
     CONFIG_VALUE(ZRot, float, "Z Rot", 0);
     CONFIG_VALUE(MoveMultiplier, float, "Change movement multipler", 5.0f);
     CONFIG_VALUE(MoveController, int, "Controls for moving the camera", 0);
-
-    CONFIG_INIT_FUNCTION(
-        CONFIG_INIT_VALUE(Active);
-        CONFIG_INIT_VALUE(Fixed);
-        CONFIG_INIT_VALUE(LeftSaber);
-        CONFIG_INIT_VALUE(SwapSaber);
-        CONFIG_INIT_VALUE(ApplyOffsets);
-        CONFIG_INIT_VALUE(OnlyPos);
-        CONFIG_INIT_VALUE(MoveWhilePlaying);
-        CONFIG_INIT_VALUE(DisableWhileReplay);
-        CONFIG_INIT_VALUE(WashingMachine);
-        CONFIG_INIT_VALUE(WashingMachineSpeed);
-        CONFIG_INIT_VALUE(XOffset);
-        CONFIG_INIT_VALUE(YOffset);
-        CONFIG_INIT_VALUE(ZOffset);
-        CONFIG_INIT_VALUE(XRot);
-        CONFIG_INIT_VALUE(YRot);
-        CONFIG_INIT_VALUE(ZRot);
-        CONFIG_INIT_VALUE(MoveMultiplier);
-        CONFIG_INIT_VALUE(MoveController);
-    )
 )
