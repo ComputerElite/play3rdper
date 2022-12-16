@@ -67,8 +67,8 @@ UnityEngine::Matrix4x4 TranslateMatrix(UnityEngine::Vector3 vector)
 
 VRController* rightController = nullptr;
 VRController* leftController = nullptr;
-UnityEngine::Vector3 saberRot = UnityEngine::Vector3(getModConfig().XRot.GetValue(), getModConfig().YRot.GetValue(), getModConfig().ZRot.GetValue());
-UnityEngine::Vector3 saberPos = UnityEngine::Vector3(getModConfig().XOffset.GetValue(), getModConfig().YOffset.GetValue(), getModConfig().ZOffset.GetValue());
+UnityEngine::Vector3 saberRot;
+UnityEngine::Vector3 saberPos;
 
 UnityEngine::Vector3 prevPos = UnityEngine::Vector3(0.0f, 0.0f, 0.0f);
 
@@ -99,6 +99,7 @@ if(shouldGetControllers) {
 }
 
   UnityEngine::Camera* c = UnityEngine::Camera::get_main();
+  if(!c) return;
   UnityEngine::Vector3 rot = c->get_transform()->get_eulerAngles();
   UnityEngine::Vector3 pos = c->get_transform()->get_position();
 
