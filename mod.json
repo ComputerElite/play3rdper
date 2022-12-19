@@ -3,7 +3,7 @@
   "name": "Third Person mod",
   "id": "Play3rdPer",
   "author": "ComputerElite",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "packageId": "com.beatgames.beatsaber",
   "packageVersion": "1.25.1",
   "coverImage": "cover.png",
@@ -19,9 +19,9 @@
       "downloadIfMissing": "https://github.com/sc2ad/BeatSaber-Quest-Codegen/releases/download/v0.28.0/Codegen.qmod"
     },
     {
-      "version": "^0.17.4",
+      "version": "^0.17.5",
       "id": "questui",
-      "downloadIfMissing": "https://github.com/darknight1050/QuestUI/releases/download/v0.17.4/QuestUI.qmod"
+      "downloadIfMissing": "https://github.com/darknight1050/QuestUI/releases/download/v0.17.5/QuestUI.qmod"
     }
   ],
   "modFiles": [
