@@ -2,11 +2,11 @@
   "_QPVersion": "0.1.1",
   "id": "Play3rdPer",
   "name": "Third Person mod",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "coverImage": "cover.png",
   "author": "ComputerElite",
   "packageId": "com.beatgames.beatsaber",
-  "packageVersion": "1.25.1",
+  "packageVersion": "1.26.2",
   "modFiles": [
   ],
   "libraryFiles": [
