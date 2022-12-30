@@ -4,7 +4,7 @@
   "info": {
     "name": "Third Person Mod",
     "id": "Play3rdPer",
-    "version": "0.10.0",
+    "version": "0.11.0",
     "url": null,
     "additionalData": {
       "overrideSoName": "libPlay3rdPer.so"
@@ -22,16 +22,6 @@
       "additionalData": {}
     },
     {
-      "id": "codegen",
-      "versionRange": "^0.31.0",
-      "additionalData": {}
-    },
-    {
-      "id": "questui",
-      "versionRange": "^0.17.9",
-      "additionalData": {}
-    },
-    {
       "id": "custom-types",
       "versionRange": "^0.15.22",
       "additionalData": {}
@@ -40,7 +30,16 @@
       "id": "config-utils",
       "versionRange": "^1.0.1",
       "additionalData": {}
+    },
+    {
+      "id": "codegen",
+      "versionRange": "^0.32.0",
+      "additionalData": {}
+    },
+    {
+      "id": "questui",
+      "versionRange": "^0.17.10",
+      "additionalData": {}
     }
-  ],
-  "additionalData": {}
+  ]
 }
