@@ -17,19 +17,6 @@ if ($help -eq $true) {
 
 $mod = "./mod.json"
 
-& $PSScriptRoot/build.ps1 -clean:$clean
-
-if ($LASTEXITCODE -ne 0) {
-    echo "Failed to build, exiting..."
-    exit $LASTEXITCODE
-}
-
-& qpm-rust qmod build
-
-& $PSScriptRoot/validate-modjson.ps1
-if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
-}
 $modJson = Get-Content $mod -Raw | ConvertFrom-Json
 
 if ($qmodName -eq "") {
@@ -67,8 +54,8 @@ foreach ($lib in $modJson.libraryFiles) {
     $filelist += $path
 }
 
-$zip = "Play3rdPer.zip"
-$qmod = "Play3rdPer.qmod"
+$zip = $qmodName + ".zip"
+$qmod = $qmodName + ".qmod"
 
 Compress-Archive -Path $filelist -DestinationPath $zip -Update
 Move-Item $zip $qmod -Force
