@@ -1,13 +1,10 @@
 #include "main.hpp"
 #include "ModConfig.hpp"
 #include "GlobalNamespace/LightManager.hpp"
-#include "GlobalNamespace/VRControllersInputManager.hpp"
 #include "GlobalNamespace/VRController.hpp"
 #include "GlobalNamespace/Saber.hpp"
 #include "GlobalNamespace/SaberManager.hpp"
 #include "GlobalNamespace/OVRInput.hpp"
-#include "GlobalNamespace/OVRInput_Button.hpp"
-#include "GlobalNamespace/AvatarPoseController.hpp"
 #include "GlobalNamespace/AudioTimeSyncController.hpp"
 
 #include "beatsaber-hook/shared/utils/typedefs.h"
@@ -28,20 +25,13 @@
 
 #include "Play3rdPerViewController.hpp"
 
-#include "questui/shared/QuestUI.hpp"
-#include "config-utils/shared/config-utils.hpp"
-#include "custom-types/shared/register.hpp"
+#include "bsml/shared/BSML.hpp"
 
 #include <math.h>
 
 using namespace GlobalNamespace;
 
-static ModInfo modInfo;
-
-Logger& getLogger() {
-    static Logger* logger = new Logger(modInfo, LoggerOptions(false, true));
-    return *logger;
-}
+static modloader::ModInfo modInfo{MOD_ID, VERSION, 0};
 
 UnityEngine::Matrix4x4 TranslateMatrix(UnityEngine::Vector3 vector)
         {
@@ -81,14 +71,13 @@ int frame = 0;
 MAKE_HOOK_MATCH(LightManager_OnWillRenderObject, &LightManager::OnCameraPreRender, void, LightManager* self, UnityEngine::Camera* camera) {
   // Do stuff when this function is called 
   LightManager_OnWillRenderObject(self, camera); 
-  //if(!(getConfig().config["Active"].GetBool()) || replay) return;
   frame++;
   if(!getModConfig().Active.GetValue() || frame < 20) return;
   frame = 20;
 
 if(shouldGetControllers) {
     ArrayW controllers = UnityEngine::Resources::FindObjectsOfTypeAll<VRController*>();
-    for (int i = 0; i < controllers.Length(); i++) {
+    for (int i = 0; i < controllers.size(); i++) {
         if(controllers[i]->get_node() == UnityEngine::XR::XRNode::LeftHand) {
             leftController = controllers[i];
         } else if(controllers[i]->get_node() == UnityEngine::XR::XRNode::RightHand){
@@ -130,7 +119,7 @@ if(shouldGetControllers) {
         UnityEngine::Vector3 diffPos = getModConfig().MoveController.GetValue() == 0 ? c->get_transform()->get_position() : (getModConfig().MoveController.GetValue() == 1 ? leftController->get_position() : rightController->get_position());
         GlobalNamespace::OVRInput::Update();
         if(GlobalNamespace::OVRInput::Get(GlobalNamespace::OVRInput::Button::Four, OVRInput::Controller::Touch)) {
-            UnityEngine::Vector3 posDifference = diffPos - prevPos;
+            UnityEngine::Vector3 posDifference = UnityEngine::Vector3::op_Subtraction(diffPos, prevPos);
 
             getModConfig().XOffset.SetValue(posDifference.x * getModConfig().MoveMultiplier.GetValue() + getModConfig().XOffset.GetValue());
             getModConfig().YOffset.SetValue(posDifference.y * getModConfig().MoveMultiplier.GetValue() + getModConfig().YOffset.GetValue());
@@ -146,7 +135,11 @@ if(shouldGetControllers) {
   typedef function_ptr_t<void, UnityEngine::Camera*, UnityEngine::Matrix4x4> type;
 auto method = *reinterpret_cast<type>(il2cpp_functions::resolve_icall("UnityEngine.Camera::set_cullingMatrix_Injected"));
 
-method(c, UnityEngine::Matrix4x4::Ortho(-99999, 99999, -99999, 99999, 0.001f, 99999) * TranslateMatrix(UnityEngine::Vector3::get_forward() * -99999 / 2) * c->get_worldToCameraMatrix());
+auto vector = UnityEngine::Vector3::op_Multiply(UnityEngine::Vector3::get_forward(), -99999 / 2);
+auto matrix = UnityEngine::Matrix4x4::op_Multiply(UnityEngine::Matrix4x4::Ortho(-99999, 99999, -99999, 99999, 0.001f, 99999), TranslateMatrix(vector));
+matrix = UnityEngine::Matrix4x4::op_Multiply(matrix, c->get_worldToCameraMatrix());
+
+method(c, matrix);
 
   if(getModConfig().Fixed.GetValue()) {
     if(getModConfig().LeftSaber.GetValue()) { 
@@ -214,28 +207,26 @@ MAKE_HOOK_MATCH(SceneManager_ActiveSceneChanged, &UnityEngine::SceneManagement::
     SceneManager_ActiveSceneChanged(previousActiveScene, nextActiveScene);
 }
 
+PLAY_3RD_PERSON_EXPORT void setup(CModInfo* info) {
+    *info = modInfo.to_c();
 
-extern "C" void setup(ModInfo& info) {
-    info.id = MOD_ID;
-    info.version = VERSION;
-    modInfo = info;
+    Paper::Logger::RegisterFileContextId(Logger.tag);
 	
-    getLogger().info("Completed setup!");
+    getModConfig().Init(modInfo);
+    Logger.info("Completed setup!");
 }
 
-extern "C" void load() {
-    getLogger().info("Installing hooks...");
+PLAY_3RD_PERSON_EXPORT void late_load() {
     il2cpp_functions::Init();
-    getModConfig().Init(modInfo);
-    QuestUI::Init();
-    QuestUI::Register::RegisterModSettingsViewController(modInfo, DidActivate);
-    QuestUI::Register::RegisterMainMenuModSettingsViewController(modInfo, DidActivate);
-    // Install our hooks
-    LoggerContextObject logger = getLogger().WithContext("load");
-    INSTALL_HOOK(logger, LightManager_OnWillRenderObject);
-    //INSTALL_HOOK_OFFSETLESS(logger, VRController_Update, il2cpp_utils::FindMethodUnsafe("", "VRController", "Update", 0));
-    INSTALL_HOOK(logger, SceneManager_ActiveSceneChanged);
-    //INSTALL_HOOK_OFFSETLESS(logger, AudioTimeSyncController_Start, il2cpp_utils::FindMethodUnsafe("", "AudioTimeSyncController", "Start", 0));
 
-    getLogger().info("Installed all hooks!");
+    Logger.info("Installing hooks...");
+    
+    BSML::Init();
+    BSML::Register::RegisterMainMenu("Play3rdPerson", "Play3rdPerson", "Play3rdPerson mod settings", DidActivate);
+    BSML::Register::RegisterSettingsMenu("Play3rdPerson", DidActivate, false);
+    // Install our hooks
+    INSTALL_HOOK(Logger, LightManager_OnWillRenderObject);
+    INSTALL_HOOK(Logger, SceneManager_ActiveSceneChanged);
+
+    Logger.info("Installed all hooks!");
 }
